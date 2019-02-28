@@ -7,14 +7,15 @@ print('code', code)
 
 class DoubleArray:
     def __init__(self, data_size=10):
-        # self.__base = [0] * data_size
-        # self.__check = [0] * data_size
+        self.__base = [0] * data_size
+        self.__check = [0] * data_size
         # ['ab#']
-        self.__base  = [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
-        self.__check = [0, 0, 1, 2, 0, 0, 0, 3, 0, 0, 0]
+        # self.__base  = [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+        # self.__check = [0, 0, 1, 2, 0, 0, 0, 3, 0, 0, 0]
+
         # ['ab#', 'abc#']
-        # self.__base  = [0, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0]
-        # self.__check = [0, 0, 1, 2, 3, 0, 0, 3, 4, 0, 0]
+        self.__base  = [0, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0]
+        self.__check = [0, 0, 1, 2, 3, 0, 0, 3, 4, 0, 0]
         self.__data_size = data_size
         
     @property
@@ -61,7 +62,7 @@ class DoubleArray:
             if ret:
                 print('success')
             else:
-                print('fail', final_node)
+                print('fail at', vocab[final_node-1], ', register', vocab)
                 s = final_node # start registaration
 
                 for c_ind, c in enumerate(vocab[s-1:]):
@@ -80,28 +81,6 @@ class DoubleArray:
                         print('cannot find an empty check element')
                         sys.exit()
 
-            continue
-
-            s = 1 # start node
-            for v_ind, c in enumerate(vocab):
-                x = None
-                for ind in range(1 + code[c], self.N):
-                    if self.check[ind] == 0:
-                        x = (ind - code[c])
-                        break
-                if x is not None:
-                    self.base[s] = x # set offset
-                    next_node = x + code[c]
-                    print('check[{}]={}'.format(next_node, self.check[next_node]))
-                    self.check[next_node] = s # set parent node
-                    s = next_node # move to next node
-                    print('insert', c)
-                    print('i:  {}'.format(', '.join([str(i) for i in range(1, self.N)])))
-                    print('b: {}'.format(self.base[1:]))
-                    print('c: {}'.format(self.check[1:]))
-                else:
-                    print('cannot find an empty check element')
-                    sys.exit()
             print()
 
 
@@ -110,7 +89,8 @@ class DoubleArray:
 
 
 def main():
-    vocab_list = ['ab#', 'abc#']
+    # vocab_list = ['ab#', 'abc#']
+    vocab_list = ['ac#']
     da = DoubleArray()
     da.build(vocab_list)
     print('----------------')
