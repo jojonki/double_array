@@ -15,8 +15,8 @@ class DoubleArray:
         # self.__check = [0, 0, 1, 2, 0, 0, 0, 3, 0, 0, 0]
 
         # ['ab#', 'abc#']
-        self.__base  = [0, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0]
-        self.__check = [0, 0, 1, 2, 3, 0, 0, 3, 4, 0, 0]
+        # self.__base  = [0, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0]
+        # self.__check = [0, 0, 1, 2, 3, 0, 0, 3, 4, 0, 0]
         self.__data_size = data_size
         
     @property
@@ -48,39 +48,33 @@ class DoubleArray:
                 print('check ok. move to:', next_node)
                 s = next_node
             else:
-                print('search fail', word[:c_ind+1])
+                print('search fail at', c, 'in', word)
                 return False, s, c
 
         return True, None, None
 
 
     def _build(self, vocab):
-        ret, final_node, final_char = self.search(vocab)
+        ret, s, c = self.search(vocab) # bool, final_node, final_char
         if ret:
             print('success')
         else:
-            # print('fail at', vocab[final_node-1], ', register', vocab)
-            s = final_node # start registaration
-
-            # for c_ind, c in enumerate(vocab[s-1:]):
-            # c = vocab[s-1]
-            c = final_char
-            # x = None
-            # for ind in range(1 + code[c], self.N):
-            for ind in range(s, self.N):
-                if self.check[ind] == 0:
-                    # x = (ind - code[c])
-                    break
-                elif self.check[ind] != s: # conflict
-                    # find children of parent s
-                    # then, set new destinations
-
+            if self.base[s] == 0: # not registered
+                for ind in range(1 + code[c], self.N):
+                    if self.check[ind] == 0:
+                        self.base[s] = ind - code[c]
+                        self.check[ind] = s
+                        break
+            else:
+                if self.check[self.base[s] + code[c]] == 0:
+                    self.check[self.base[s] + code[c]] = s
+                else:
                     # 衝突発生ノードを親に持つノードのindexを取得
                     child_node_list = [ch_i for ch_i, ch_v in enumerate(self.check) if ch_v == s]
                     # 衝突発生ノードを親に持つノードのコード値を取得
                     child_code_list = [ch_n - self.base[s] for ch_n in child_node_list]
                     # 新たに追加しようとしている文字コード値も子ノードになるため追加
-                    child_code_list += [code[final_char]] # also add the char of the new vocab
+                    child_code_list += [code[c]] # also add the char of the new vocab
                     # 子ノードが利用できる空のcheck要素を探す
                     for i in range(1, self.N):
                         if sum([self.check[i + code_v] for code_v in child_code_list]) == 0:
@@ -107,40 +101,31 @@ class DoubleArray:
                                 self.base[prev_dst_node] = 0
                                 self.check[prev_dst_node] = 0
                             # 新しく追加する文字コード値のノードのcheckもセット
-                            self.check[x + code[final_char]] = s
+                            self.check[x + code[c]] = s
                             self.report()
                             break
             self._build(vocab)
 
-            # if x is not None:
-            #     self.base[s] = x
-            #     next_node = x + code[c]
-            #     self.check[next_node] = s
-            #     s = next_node
-            # else:
-            #     print('cannot find an empty check element')
-            #     sys.exit()
-
-
-
     def build(self, vocab_list):
-        self.report()
         for vocab in vocab_list:
             print('vocab', vocab)
             self._build(vocab)
-            
-
 
     def commonPrefixSearch(self):
         pass
 
 
 def main():
-    # vocab_list = ['ab#', 'abc#']
-    vocab_list = ['ac#']
+    vocab_list = ['ab#', 'abc#']
+    vocab_list = ['ab#', 'abc#', 'ac#']
+    # vocab_list = ['abc#']
+    # vocab_list = ['ac#']
     da = DoubleArray()
+    print('INIT-----------------')
+    da.report()
+    print('---------------------')
     da.build(vocab_list)
-    print('----------------')
+    print('FINAL----------------')
     da.report()
 
 
