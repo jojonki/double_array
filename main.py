@@ -1,3 +1,4 @@
+import os
 import sys
 
 terminated_char = '#'
@@ -118,6 +119,28 @@ class DoubleArray:
 
     def commonPrefixSearch(self):
         pass
+
+    def save(self, fpath, base, check):
+        with open(fpath, 'w') as fout:
+            fout.write('{}\n'.format(','.join(base)))
+            fout.write('{}\n'.format(','.join(check)))
+
+    def load(self, fpath):
+        ret = False
+        if os.path.exists(fpath):
+            with open(fpath, 'r') as fin:
+                lines = fin.readlines()
+                if len(lines) == 2:
+                    self.base = lines[0]
+                    self.check = lines[1]
+                    ret = True
+                else:
+                    print('Invalid double array format')
+        else:
+            print('{} does not exist'.format(fpath))
+
+        return ret
+
 
 
 def main():
