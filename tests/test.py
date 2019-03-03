@@ -9,7 +9,7 @@ class TesDoubleArray(unittest.TestCase):
         self.v2c = {v:i for i, v in self.code.items()}
         self.da = DoubleArray(self.code)
 
-    def test_tashizan(self):
+    def test_doubleArray(self):
         exp_base  = [0, 1, 3, 0, 2, 1, 3, 0, 0, 0]
         exp_check = [0, 0, 1, 0, 5, 2, 2, 5, 4, 6]
         vocab_list = ['ab#', 'abc#', 'ac#']
