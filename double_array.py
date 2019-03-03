@@ -1,7 +1,8 @@
 import os
+import sys
 
 class DoubleArray:
-    def __init__(self, code, data_size=10):
+    def __init__(self, code, data_size=20):
         self.__code = code
         # ['ab#']
         # self.__base  = [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
@@ -38,7 +39,7 @@ class DoubleArray:
         print('b: {}'.format(self.base[1:]))
         print('c: {}'.format(self.check[1:]))
 
-    def search(self, word):
+    def search(self, word, start_node=1):
         """Search a word in the double array
 
         Rerutns:
@@ -48,28 +49,34 @@ class DoubleArray:
         if not word or type(word) != str: # unsafe return values
             return False, None, None
 
-        s = 1 # start node
+        crnt_node = start_node
+        crnt_char = None
         for c_ind, c in enumerate(word):
-            next_node = self.base[s] + self.code[c]
-            if self.check[next_node] == s:
+            next_node = self.base[crnt_node] + self.code[c]
+            if self.check[next_node] == crnt_node:
                 # check ok. move to:', next_node
-                s = next_node
+                crnt_node = next_node
+                crnt_char = c
             else:
                 # 'search fail at `c` in `word`
-                return False, s, c
+                return False, crnt_node, c
 
-        return True, None, None
+        return True, crnt_node, crnt_char
 
     def _registerVocab(self, s, c):
         """
         """
         if self.base[s] == 0: # Not used based node
             # Search empty check node
+            found_empty_check = False
             for ind in range(1 + self.code[c], self.N):
                 if self.check[ind] == 0:
                     self.base[s] = ind - self.code[c]
                     self.check[ind] = s
+                    found_empty_check = True
                     break
+            if not found_empty_check:
+                sys.exit('Terminate this program because no empty check found')
             # TODO Handle if theare are no empty check
         else: # Used base node
             if self.check[self.base[s] + self.code[c]] == 0: # if there is an availabe check
@@ -115,13 +122,13 @@ class DoubleArray:
     def _build(self, vocab):
         ret, s, c = self.search(vocab) # bool, final_node, final_char
         if ret:
-            print('success')
+            print('build success')
         else:
             self._registerVocab(s, c)
             self._build(vocab) # TODO(jonki) recursive call should be handled safely
 
     def build(self, vocab_list):
-        """Build an double array from a vocabulary list
+        """Build an double array from a vocabulary list.
 
         Args:
             vocab_list: An array of vocabuary(str)
@@ -130,11 +137,12 @@ class DoubleArray:
             A boolean indicating if it succeed to build the dictioanry or not.
         """
         for vocab in vocab_list:
-            print('vocab', vocab)
+            print('_build vocab', vocab)
             self._build(vocab)
+            self.report()
 
     def commonPrefixSearch(self, input_str):
-        """Search all common prefix from the dictionary
+        """Search all common prefix of input string from the dictionary.
 
         Args:
             input_str: A sentence of the query.
@@ -142,7 +150,18 @@ class DoubleArray:
         Return:
             prefix_list: A list of words contains input_str as prefix
         """
-        pass
+        cp_list = []
+        final_node = 1
+        for ind, char in enumerate(input_str, 1):
+            ret, final_node, final_char = self.search(char, start_node=final_node)
+            if ret and self.check[self.base[final_node] + self.code['#']] == final_node:
+                print('"{}" found in the dictionary'.format(input_str[:ind]))
+                cp_list.append(input_str[:ind])
+            else:
+                print('Not found!')
+
+        return cp_list
+
 
     def save(self, fpath, base, check):
         """Save a double array to a file"""

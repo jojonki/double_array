@@ -12,7 +12,7 @@ def main():
     print('code', code)
 
     # vocab_list = ['ab#', 'abc#']
-    vocab_list = ['ab#', 'abc#', 'ac#']
+    vocab_list = ['a#', 'ab#', 'abc#', 'ac#']
     # vocab_list = ['abc#']
     # vocab_list = ['ac#']
     da = DoubleArray(code)
@@ -22,6 +22,11 @@ def main():
     da.build(vocab_list)
     print('FINAL----------------')
     da.report()
+
+    sent = 'abcd'
+    cp_list = da.commonPrefixSearch(sent)
+    print(cp_list)
+
 
 
 if __name__ == '__main__':
