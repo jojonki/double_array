@@ -2,8 +2,6 @@ import os
 
 class DoubleArray:
     def __init__(self, code, data_size=10):
-        self.__base = [0] * data_size
-        self.__check = [0] * data_size
         self.__code = code
         # ['ab#']
         # self.__base  = [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
@@ -13,6 +11,7 @@ class DoubleArray:
         # self.__base  = [0, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0]
         # self.__check = [0, 0, 1, 2, 3, 0, 0, 3, 4, 0, 0]
         self.__data_size = data_size
+        self.clear()
         
     @property
     def code(self):
@@ -29,6 +28,10 @@ class DoubleArray:
     @property
     def N(self):
         return self.__data_size
+
+    def clear(self):
+        self.__base = [0] * self.__data_size
+        self.__check = [0] * self.__data_size
 
     def report(self):
         print('i:  {}'.format(', '.join([str(i) for i in range(1, self.N)])))
@@ -163,3 +166,4 @@ class DoubleArray:
             print('{} does not exist'.format(fpath))
 
         return ret
+
