@@ -25,7 +25,7 @@ def main():
 
     sent = 'abcd'
     cp_list = da.commonPrefixSearch(sent)
-    print(cp_list)
+    print('commonPrefixSearch("{}"): {}'.format(sent, cp_list))
 
 
 
