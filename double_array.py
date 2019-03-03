@@ -158,7 +158,7 @@ class DoubleArray:
                 print('"{}" found in the dictionary'.format(input_str[:ind]))
                 cp_list.append(input_str[:ind])
             else:
-                print('Not found!')
+                print('"{}" NOT found in the dictionary'.format(input_str[:ind]))
 
         return cp_list
 
