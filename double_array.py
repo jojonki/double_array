@@ -120,6 +120,7 @@ class DoubleArray:
                 # TODO handle if there are no empty check
 
     def _build(self, vocab):
+        vocab = vocab if vocab.endswith('#') else vocab + '#'
         ret, s, c = self.search(vocab) # bool, final_node, final_char
         if ret:
             print('build success')

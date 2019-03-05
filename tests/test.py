@@ -12,14 +12,14 @@ class TesDoubleArray(unittest.TestCase):
     def test_doubleArray(self):
         exp_base  = [0, 1, 3, 0, 2, 1, 3, 0, 0, 0]
         exp_check = [0, 0, 1, 0, 5, 2, 2, 5, 4, 6]
-        vocab_list = ['ab#', 'abc#', 'ac#']
+        vocab_list = ['ab', 'abc', 'ac']
         self.da.build(vocab_list)
         self.assertEqual(exp_base, self.da.base[:len(exp_base)])
         self.assertEqual(exp_check, self.da.check[:len(exp_base)])
 
     def test_commonPrefixSearch(self):
         self.da.clear()
-        vocab_list = ['ab#', 'abc#', 'ac#']
+        vocab_list = ['ab', 'abc', 'ac']
         self.da.build(vocab_list)
 
         sent1 = 'aca'

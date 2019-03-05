@@ -3,3 +3,4 @@
 ## TODOs
 - [ ] add tests
 - [ ] use base as references of dictionary index
+- [ ] support unk charas
