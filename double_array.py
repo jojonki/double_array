@@ -4,22 +4,10 @@ import sys
 T = '#'
 
 class DoubleArray:
-    def __init__(self, code, data_size=20):
-        self._code = code
-        # ['ab#']
-        # self._base  = [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
-        # self._check = [0, 0, 1, 2, 0, 0, 0, 3, 0, 0, 0]
-
-        # ['ab#', 'abc#']
-        # self._base  = [0, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0]
-        # self._check = [0, 0, 1, 2, 3, 0, 0, 3, 4, 0, 0]
+    def __init__(self, data_size=20):
         self._data_size = data_size
         self.clear()
         
-    @property
-    def code(self):
-        return self._code
-
     @property
     def base(self):
         return self._base
@@ -30,11 +18,18 @@ class DoubleArray:
 
     @property
     def N(self):
-        return self._data_size
+        assert len(self._base) == len(self._check)
+        return len(self._base)
 
     def _expand(self, size):
-        print('base/check size:', len(self._base))
+        self.report()
         diff = len(self._base) - size
+        if diff > 0:
+            self._base += [0] * diff
+            self._check += [0] * diff
+
+    def _expand2(self, diff):
+        # TODO epand and expand2 are confusing
         if diff > 0:
             self._base += [0] * diff
             self._check += [0] * diff
@@ -43,10 +38,14 @@ class DoubleArray:
         self._base = [0] * self._data_size
         self._check = [0] * self._data_size
 
-    def report(self):
-        print('i:  {}'.format(', '.join([str(i) for i in range(1, self.N)])))
-        print('b: {}'.format(self.base[1:]))
-        print('c: {}'.format(self.check[1:]))
+    def report(self, verbose=False):
+        print('Array length: {}'.format(self.N))
+        mb = (sys.getsizeof(self._base) + sys.getsizeof(self._check)) / 1024 / 1024
+        print('Double-Array size: {:.1f} MB'.format(mb))
+        if verbose:
+            print('i:  {}'.format(', '.join([str(i) for i in range(1, self.N)])))
+            print('b: {}'.format(self.base[1:]))
+            print('c: {}'.format(self.check[1:]))
 
     def search(self, word, start_node=1):
         """Search a word in the double array
@@ -55,14 +54,11 @@ class DoubleArray:
             Return the search result with information
             (found: boolean, final_node: int, final_chara: str)
         """
-        if not word or type(word) != str: # unsafe return values
-            return False, None, None
-
         crnt_node = start_node
         crnt_char = None
         for c_ind, c in enumerate(word):
-            next_node = self.base[crnt_node] + self.code[c]
-            if self.check[next_node] == crnt_node:
+            next_node = self.base[crnt_node] + c
+            if next_node < len(self.check) and self.check[next_node] == crnt_node:
                 # check ok. move to:', next_node
                 crnt_node = next_node
                 crnt_char = c
@@ -78,9 +74,11 @@ class DoubleArray:
         if self.base[s] == 0: # Not used based node
             # Search empty check node
             found_empty_check = False
-            for ind in range(1 + self.code[c], self.N):
+            if c > self.N:
+                self._expand2(c - self.N + 10) # TODO do correct epansion
+            for ind in range(1 + c, self.N):
                 if self.check[ind] == 0: # found empty check node
-                    self.base[s] = ind - self.code[c]
+                    self.base[s] = ind - c
                     self.check[ind] = s
                     found_empty_check = True
                     break
@@ -88,8 +86,8 @@ class DoubleArray:
                 sys.exit('Terminate this program because no empty check found')
             # TODO Handle if theare are no empty check
         else: # Used base node
-            if self.check[self.base[s] + self.code[c]] == 0: # if there is an availabe check
-                self.check[self.base[s] + self.code[c]] = s
+            if self.check[self.base[s] + c] == 0: # if there is an availabe check
+                self.check[self.base[s] + c] = s
             else: # node conflicted
                 # Re-assign base and check nodes
                 # Gather all children nodes whose parent is the conflict node
@@ -97,7 +95,7 @@ class DoubleArray:
                 # Gather all children values whose parent is the conflict node
                 child_code_list = [ch_n - self.base[s] for ch_n in child_node_list]
                 # The parent of the new adding node will be the conflict node
-                child_code_list += [self.code[c]] # also add the char of the new vocab
+                child_code_list += [c] # also add the char of the new vocab
                 # Search new empty check for the children
                 for i in range(1, self.N):
                     # Check availability of check for the children
@@ -124,18 +122,19 @@ class DoubleArray:
                             self.check[prev_dst_node] = 0
 
                         # Set check for the new character
-                        self.check[offset + self.code[c]] = s
+                        self.check[offset + c] = s
                         # self.report()
                         break
                 # TODO handle if there are no empty check
 
     def _build(self, vocab):
-        vocab = vocab if vocab.endswith(T) else vocab + T 
+        if type(vocab) == str:
+            vocab = vocab.encode('utf-8')
         ret, s, c = self.search(vocab) # bool, final_node, final_char
         if ret:
-            print(vocab, 'in the dic')
+            print(vocab.decode('utf-8'), 'in the dic')
         else:
-            print(vocab, 'NOT in the dic. Add', vocab)
+            print(vocab.decode('utf-8'), 'NOT in the dic. Add', vocab.decode('utf-8'))
             self._registerVocab(s, c)
             self._build(vocab) # TODO(jonki) recursive call should be handled safely
 
@@ -150,6 +149,8 @@ class DoubleArray:
         """
         for vocab in vocab_list:
             print('_build vocab', vocab)
+            if not vocab.endswith(T):
+                vocab += T
             self._build(vocab)
             # self.report()
 
@@ -165,8 +166,10 @@ class DoubleArray:
         cp_list = []
         final_node = 1
         for ind, char in enumerate(input_str, 1):
-            ret, final_node, final_char = self.search(char, start_node=final_node)
-            if ret and self.check[self.base[final_node] + self.code[T]] == final_node:
+            byte_char = char.encode('utf-8')
+            ret, final_node, final_char = self.search(byte_char, start_node=final_node)
+            # if ret and self.check[self.base[final_node] + T] == final_node:
+            if ret and self.check[self.base[final_node] + 35] == final_node: # '#' -> 35
                 print('"{}" found in the dictionary'.format(input_str[:ind]))
                 cp_list.append(input_str[:ind])
             else:
