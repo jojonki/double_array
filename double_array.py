@@ -1,38 +1,47 @@
 import os
 import sys
 
+T = '#'
+
 class DoubleArray:
     def __init__(self, code, data_size=20):
-        self.__code = code
+        self._code = code
         # ['ab#']
-        # self.__base  = [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
-        # self.__check = [0, 0, 1, 2, 0, 0, 0, 3, 0, 0, 0]
+        # self._base  = [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+        # self._check = [0, 0, 1, 2, 0, 0, 0, 3, 0, 0, 0]
 
         # ['ab#', 'abc#']
-        # self.__base  = [0, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0]
-        # self.__check = [0, 0, 1, 2, 3, 0, 0, 3, 4, 0, 0]
-        self.__data_size = data_size
+        # self._base  = [0, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0]
+        # self._check = [0, 0, 1, 2, 3, 0, 0, 3, 4, 0, 0]
+        self._data_size = data_size
         self.clear()
         
     @property
     def code(self):
-        return self.__code
+        return self._code
 
     @property
     def base(self):
-        return self.__base
+        return self._base
 
     @property
     def check(self):
-        return self.__check
+        return self._check
 
     @property
     def N(self):
-        return self.__data_size
+        return self._data_size
+
+    def _expand(self, size):
+        print('base/check size:', len(self._base))
+        diff = len(self._base) - size
+        if diff > 0:
+            self._base += [0] * diff
+            self._check += [0] * diff
 
     def clear(self):
-        self.__base = [0] * self.__data_size
-        self.__check = [0] * self.__data_size
+        self._base = [0] * self._data_size
+        self._check = [0] * self._data_size
 
     def report(self):
         print('i:  {}'.format(', '.join([str(i) for i in range(1, self.N)])))
@@ -70,7 +79,7 @@ class DoubleArray:
             # Search empty check node
             found_empty_check = False
             for ind in range(1 + self.code[c], self.N):
-                if self.check[ind] == 0:
+                if self.check[ind] == 0: # found empty check node
                     self.base[s] = ind - self.code[c]
                     self.check[ind] = s
                     found_empty_check = True
@@ -92,6 +101,7 @@ class DoubleArray:
                 # Search new empty check for the children
                 for i in range(1, self.N):
                     # Check availability of check for the children
+                    self._expand(max(i + code_v for code_v in child_node_list))
                     if sum([self.check[i + code_v] for code_v in child_code_list]) == 0:
                         offset = i
                         org_base = self.base[s] # save the old offset
@@ -115,16 +125,17 @@ class DoubleArray:
 
                         # Set check for the new character
                         self.check[offset + self.code[c]] = s
-                        self.report()
+                        # self.report()
                         break
                 # TODO handle if there are no empty check
 
     def _build(self, vocab):
-        vocab = vocab if vocab.endswith('#') else vocab + '#'
+        vocab = vocab if vocab.endswith(T) else vocab + T 
         ret, s, c = self.search(vocab) # bool, final_node, final_char
         if ret:
-            print('build success')
+            print(vocab, 'in the dic')
         else:
+            print(vocab, 'NOT in the dic. Add', vocab)
             self._registerVocab(s, c)
             self._build(vocab) # TODO(jonki) recursive call should be handled safely
 
@@ -140,7 +151,7 @@ class DoubleArray:
         for vocab in vocab_list:
             print('_build vocab', vocab)
             self._build(vocab)
-            self.report()
+            # self.report()
 
     def commonPrefixSearch(self, input_str):
         """Search all common prefix of input string from the dictionary.
@@ -155,7 +166,7 @@ class DoubleArray:
         final_node = 1
         for ind, char in enumerate(input_str, 1):
             ret, final_node, final_char = self.search(char, start_node=final_node)
-            if ret and self.check[self.base[final_node] + self.code['#']] == final_node:
+            if ret and self.check[self.base[final_node] + self.code[T]] == final_node:
                 print('"{}" found in the dictionary'.format(input_str[:ind]))
                 cp_list.append(input_str[:ind])
             else:
