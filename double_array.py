@@ -86,7 +86,7 @@ class DoubleArray:
                 sys.exit('Terminate this program because no empty check found')
             # TODO Handle if theare are no empty check
         else: # Used base node
-            if self.check[self.base[s] + c] == 0: # if check is correct
+            if (self.base[s] + c < self.N) and self.check[self.base[s] + c] == 0: # if check is correct
                 self.check[self.base[s] + c] = s
             else: # node conflicted
                 # Re-assign base and check nodes
@@ -135,7 +135,7 @@ class DoubleArray:
         if ret:
             print(vocab.decode('utf-8'), 'in the dic')
         else:
-            print(vocab.decode('utf-8'), 'NOT in the dic. Add', vocab.decode('utf-8'))
+            # print(vocab.decode('utf-8'), 'NOT in the dic. Add', vocab.decode('utf-8'))
             self._registerVocab(s, c)
             self._build(vocab) # TODO(jonki) recursive call should be handled safely
 

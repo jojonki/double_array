@@ -39,7 +39,7 @@ def main():
     da.report()
 
     print('Test')
-    query_list = ['東', '東京', '東京タワー', '東京都議会']
+    query_list = ['東', '東京', '東京タワー', '東京都議会', '加藤清正']
     for q in query_list:
         print('=====Search {}======'.format(q))
         cp_list = da.commonPrefixSearch(q)
