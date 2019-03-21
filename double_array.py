@@ -21,14 +21,7 @@ class DoubleArray:
         assert len(self._base) == len(self._check)
         return len(self._base)
 
-    def _expand(self, size):
-        self.report()
-        diff = len(self._base) - size
-        if diff > 0:
-            self._base += [0] * diff
-            self._check += [0] * diff
-
-    def _expand2(self, diff):
+    def _expand(self, diff):
         # TODO epand and expand2 are confusing
         if diff > 0:
             self._base += [0] * diff
@@ -40,8 +33,15 @@ class DoubleArray:
 
     def report(self, verbose=False):
         print('Array length: {}'.format(self.N))
-        mb = (sys.getsizeof(self._base) + sys.getsizeof(self._check)) / 1024 / 1024
-        print('Double-Array size: {:.1f} MB'.format(mb))
+        d_size = (sys.getsizeof(self._base) + sys.getsizeof(self._check))
+        unit = 'B'
+        if d_size > 1024:
+            unit = 'KB'
+            d_size /= 1024
+        if d_size > 1024:
+            unit = 'MB'
+            d_size /= 1024
+        print('Double-Array size: {:.1f} {}'.format(d_size, unit))
         if verbose:
             print('i:  {}'.format(', '.join([str(i) for i in range(1, self.N)])))
             print('b: {}'.format(self.base[1:]))
@@ -75,7 +75,7 @@ class DoubleArray:
             # Search empty check node
             found_empty_check = False
             if c > self.N:
-                self._expand2(c - self.N + 10) # TODO do correct epansion
+                self._expand(c - self.N + 10) # TODO do correct epansion
             for ind in range(1 + c, self.N):
                 if self.check[ind] == 0: # found empty check node
                     self.base[s] = ind - c
@@ -86,7 +86,7 @@ class DoubleArray:
                 sys.exit('Terminate this program because no empty check found')
             # TODO Handle if theare are no empty check
         else: # Used base node
-            if self.check[self.base[s] + c] == 0: # if there is an availabe check
+            if self.check[self.base[s] + c] == 0: # if check is correct
                 self.check[self.base[s] + c] = s
             else: # node conflicted
                 # Re-assign base and check nodes
@@ -98,9 +98,10 @@ class DoubleArray:
                 child_code_list += [c] # also add the char of the new vocab
                 # Search new empty check for the children
                 for i in range(1, self.N):
-                    # Check availability of check for the children
-                    self._expand(max(i + code_v for code_v in child_node_list))
-                    if sum([self.check[i + code_v] for code_v in child_code_list]) == 0:
+                    # Check available check for all the children
+                    max_ind = max(i + code_v for code_v in child_node_list)
+                    self._expand(max_ind - len(self._check))
+                    if sum([self.check[i + code_v] for code_v in child_code_list]) == 0: # Found available check
                         offset = i
                         org_base = self.base[s] # save the old offset
                         self.base[s] = offset
@@ -200,4 +201,3 @@ class DoubleArray:
             print('{} does not exist'.format(fpath))
 
         return ret
-
