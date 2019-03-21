@@ -7,6 +7,8 @@ T = '#'
 class DoubleArray:
     def __init__(self, data_size=20):
         self._data_size = data_size
+        self._base = []
+        self._check = []
         self.clear()
         
     @property
@@ -82,7 +84,7 @@ class DoubleArray:
                 dst_check_index = self.N - 1
 
             found_empty_check = True
-            self.base[s] = dst_check_index - c
+            self.base[s] = 1
             self.check[dst_check_index] = s
         else: # Used base node
             if (self.base[s] + c < self.N) and self.check[self.base[s] + c] == 0: # if check is correct
@@ -178,11 +180,11 @@ class DoubleArray:
         return cp_list
 
 
-    def save(self, fpath, base, check):
+    def save(self, fpath):
         """Save a double array to a file"""
         with open(fpath, 'w') as fout:
-            fout.write('{}\n'.format(','.join(base)))
-            fout.write('{}\n'.format(','.join(check)))
+            fout.write('{}\n'.format(','.join([str(ind) for ind in self.base])))
+            fout.write('{}\n'.format(','.join([str(ind) for ind in self.check])))
 
     def load(self, fpath):
         """Load a file of a double array"""
@@ -191,8 +193,8 @@ class DoubleArray:
             with open(fpath, 'r') as fin:
                 lines = fin.readlines()
                 if len(lines) == 2:
-                    self.base = lines[0]
-                    self.check = lines[1]
+                    self._base  = [int(ind) for ind in lines[0].split(',')]
+                    self._check = [int(ind) for ind in lines[1].split(',')]
                     ret = True
                 else:
                     print('Invalid double array format')
