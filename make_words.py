@@ -7,6 +7,9 @@ import random
 from tqdm import tqdm
 
 
+random.seed(1111)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--N', type=int, help='Number of samples. Use all lines if this is not specified')
