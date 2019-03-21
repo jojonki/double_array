@@ -22,10 +22,11 @@ class DoubleArray:
         return len(self._base)
 
     def _expand(self, diff):
-        # TODO epand and expand2 are confusing
+        """Expand double array"""
         if diff > 0:
             self._base += [0] * diff
             self._check += [0] * diff
+            self.report()
 
     def clear(self):
         self._base = [0] * self._data_size
@@ -72,19 +73,17 @@ class DoubleArray:
         """
         """
         if self.base[s] == 0: # Not used based node
-            # Search empty check node
-            found_empty_check = False
-            if c > self.N:
-                self._expand(c - self.N + 10) # TODO do correct epansion
-            for ind in range(1 + c, self.N):
-                if self.check[ind] == 0: # found empty check node
-                    self.base[s] = ind - c
-                    self.check[ind] = s
-                    found_empty_check = True
-                    break
-            if not found_empty_check:
-                sys.exit('Terminate this program because no empty check found')
-            # TODO Handle if theare are no empty check
+            # Search an empty check node
+            try:
+                dst_check_index = self._check[1+c:].index(0)
+            except ValueError as e: # No empty check nodes
+                # Expand check
+                self._expand(1)
+                dst_check_index = self.N - 1
+
+            found_empty_check = True
+            self.base[s] = dst_check_index - c
+            self.check[dst_check_index] = s
         else: # Used base node
             if (self.base[s] + c < self.N) and self.check[self.base[s] + c] == 0: # if check is correct
                 self.check[self.base[s] + c] = s
@@ -99,7 +98,7 @@ class DoubleArray:
                 # Search new empty check for the children
                 for i in range(1, self.N):
                     # Check available check for all the children
-                    max_ind = max(i + code_v for code_v in child_node_list)
+                    max_ind = max(i + code_v + 1 for code_v in child_code_list)
                     self._expand(max_ind - len(self._check))
                     if sum([self.check[i + code_v] for code_v in child_code_list]) == 0: # Found available check
                         offset = i
