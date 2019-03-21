@@ -1,5 +1,6 @@
 import os
 import sys
+from tqdm import tqdm
 
 T = '#'
 
@@ -26,7 +27,6 @@ class DoubleArray:
         if diff > 0:
             self._base += [0] * diff
             self._check += [0] * diff
-            self.report()
 
     def clear(self):
         self._base = [0] * self._data_size
@@ -147,12 +147,12 @@ class DoubleArray:
         Returns:
             A boolean indicating if it succeed to build the dictioanry or not.
         """
-        for vocab in vocab_list:
-            print('_build vocab', vocab)
+        for vocab in tqdm(vocab_list):
+            print('Build vocab:', vocab)
             if not vocab.endswith(T):
                 vocab += T
             self._build(vocab)
-            # self.report()
+            self.report()
 
     def commonPrefixSearch(self, input_str):
         """Search all common prefix of input string from the dictionary.
