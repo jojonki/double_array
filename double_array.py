@@ -97,12 +97,14 @@ class DoubleArray:
                 # The parent of the new adding node will be the conflict node
                 child_code_list += [c] # also add the char of the new vocab
                 # Search new empty check for the children
+                found_empty_check = False
                 for i in range(1, self.N):
                     # Check available check for all the children
                     max_ind = max(i + code_v + 1 for code_v in child_code_list)
                     self._expand(max_ind - len(self._check)) # TODO maybe wrong
                     # print(max_ind, len(self._check), max_ind - len(self._check))
                     if sum([self.check[i + code_v] for code_v in child_code_list]) == 0: # Found available check
+                        found_empty_check = True
                         offset = i
                         org_base = self.base[s] # save the old offset
                         self.base[s] = offset
@@ -128,6 +130,8 @@ class DoubleArray:
                         # self.report()
                         break
                 # TODO handle if there are no empty check
+                if not found_empty_check:
+                    sys.exit('Could not find empty check when it conflicts')
 
     def _build(self, vocab):
         if type(vocab) == str:
