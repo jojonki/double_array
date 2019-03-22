@@ -77,14 +77,13 @@ class DoubleArray:
         if self.base[s] == 0: # Not used based node
             # Search an empty check node
             try:
-                dst_check_index = self._check[1+c:].index(0)
+                dst_check_index = 1 + c + self._check[1+c:].index(0)
             except ValueError as e: # No empty check nodes
                 # Expand check
                 self._expand(1)
                 dst_check_index = self.N - 1
 
-            found_empty_check = True
-            self.base[s] = 1
+            self.base[s] = dst_check_index - c
             self.check[dst_check_index] = s
         else: # Used base node
             if (self.base[s] + c < self.N) and self.check[self.base[s] + c] == 0: # if check is correct
@@ -101,7 +100,8 @@ class DoubleArray:
                 for i in range(1, self.N):
                     # Check available check for all the children
                     max_ind = max(i + code_v + 1 for code_v in child_code_list)
-                    self._expand(max_ind - len(self._check))
+                    self._expand(max_ind - len(self._check)) # TODO maybe wrong
+                    # print(max_ind, len(self._check), max_ind - len(self._check))
                     if sum([self.check[i + code_v] for code_v in child_code_list]) == 0: # Found available check
                         offset = i
                         org_base = self.base[s] # save the old offset
