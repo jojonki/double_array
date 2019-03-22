@@ -15,22 +15,24 @@ def build(da, vocab_file):
     print('Building vocabuary...')
     da.build(word_list)
     print('Built!')
-    da.save('./models/dict')
+    da.save('./models/{}.dict'.format(vocab_file.split('/')[-1]))
     da.report()
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--vocab', type=str, metavar='PATH', required=True, help='vocabulary file')
+    parser.add_argument('--vocab', type=str, metavar='PATH', help='vocabulary file')
     parser.add_argument('--dict', type=str, metavar='PATH', help='build double array')
     args = parser.parse_args()
 
     da = DoubleArray()
     if args.dict:
         da.load(args.dict)
-    else:
+    elif args.vocab:
         build(da, args.vocab)
         # da.report(verbose=True)
+    else:
+        sys.exit('You need to specify --vocab or --dict')
 
 
     query_list = ['東', '東京', '東京タワー', '東京都議会', '加藤清正']
