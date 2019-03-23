@@ -2,6 +2,7 @@ import argparse
 import gzip
 import os
 import sys
+import time
 from tqdm import tqdm
 
 from double_array import DoubleArray
@@ -20,6 +21,8 @@ def build(da, vocab_file):
 
 
 def main():
+    begin_time = time.time()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--vocab', type=str, metavar='PATH', help='vocabulary file')
     parser.add_argument('--dict', type=str, metavar='PATH', help='build double array')
@@ -40,6 +43,8 @@ def main():
         print('=====Search {}======'.format(q))
         cp_list = da.commonPrefixSearch(q)
         print('commonPrefixSearch("{}"): {}'.format(q, cp_list))
+
+    print('Process time: {:.1f}s'.format(time.time() - begin_time))
 
 
 if __name__ == '__main__':
