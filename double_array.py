@@ -103,7 +103,7 @@ class DoubleArray:
                     found_empty_check = True
 
                     # Check available check for all the children
-                    max_ind = max(i + code_v + 1 for code_v in child_code_list)
+                    max_ind = i + child_code_list[-1] + 1 # last child_code is the largest.
                     self._expand(max_ind - len(self._check)) # TODO maybe wrong
 
                     # All check must be 0
