@@ -93,42 +93,52 @@ class DoubleArray:
                 # Gather all children nodes whose parent is the conflict node
                 child_node_list = [ch_i for ch_i, ch_v in enumerate(self.check) if ch_v == s]
                 # Gather all children values whose parent is the conflict node
-                child_code_list = [ch_n - self.base[s] for ch_n in child_node_list]
                 # The parent of the new adding node will be the conflict node
-                child_code_list += [c] # also add the char of the new vocab
-                # Search new empty check for the children
-                found_empty_check = False
+                child_code_list = [ch_n - self.base[s] for ch_n in child_node_list] + [c]
+                # child_code_list += [c] # also add the char of the new vocab
+                # max_ind = max(self.N + code_v + 1 for code_v in child_code_list)
+                # self._expand(max_ind - len(self._check)) # TODO maybe wrong
                 for i in range(1, self.N):
+                    # Search new empty check for the children
+                    found_empty_check = True
+
                     # Check available check for all the children
                     max_ind = max(i + code_v + 1 for code_v in child_code_list)
                     self._expand(max_ind - len(self._check)) # TODO maybe wrong
-                    # print(max_ind, len(self._check), max_ind - len(self._check))
-                    if sum([self.check[i + code_v] for code_v in child_code_list]) == 0: # Found available check
-                        found_empty_check = True
-                        offset = i
-                        org_base = self.base[s] # save the old offset
-                        self.base[s] = offset
-                        # Update the node and check of the all children with the new offset
-                        for node in child_node_list:
-                            code_v = node - org_base
-                            prev_dst_node = org_base + code_v
-                            new_dst_node = offset + code_v
-                            self.base[new_dst_node] = self.base[prev_dst_node]
-                            self.check[new_dst_node] = s
 
-                            # Update children whose parent is the updated node, i.e., the grand parent is the conflict node
-                            for j in range(1, self.N):
-                                if self.check[j] == prev_dst_node:
-                                    self.check[j] = new_dst_node
+                    # All check must be 0
+                    for code_v in child_code_list:
+                        if self.check[i + code_v] != 0:
+                            found_empty_check = False
+                            break
 
-                            # Clear old information of the child
-                            self.base[prev_dst_node] = 0
-                            self.check[prev_dst_node] = 0
+                    if not found_empty_check: # Found available check
+                        continue
 
-                        # Set check for the new character
-                        self.check[offset + c] = s
-                        # self.report()
-                        break
+                    offset = i
+                    org_base = self.base[s] # save the old offset
+                    self.base[s] = offset
+                    # Update the node and check of the all children with the new offset
+                    for node in child_node_list:
+                        code_v = node - org_base
+                        prev_dst_node = org_base + code_v
+                        new_dst_node = offset + code_v
+                        self.base[new_dst_node] = self.base[prev_dst_node]
+                        self.check[new_dst_node] = s
+
+                        # Update children whose parent is the updated node, i.e., the grand parent is the conflict node
+                        for j in range(1, self.N):
+                            if self.check[j] == prev_dst_node:
+                                self.check[j] = new_dst_node
+
+                        # Clear old information of the child
+                        self.base[prev_dst_node] = 0
+                        self.check[prev_dst_node] = 0
+
+                    # Set check for the new character
+                    self.check[offset + c] = s
+                    # self.report()
+                    break
                 # TODO handle if there are no empty check
                 if not found_empty_check:
                     sys.exit('Could not find empty check when it conflicts')
