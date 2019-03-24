@@ -19,7 +19,10 @@ def longest_search(da, query):
     result = []
     while begin < end:
         cp_list = da.commonPrefixSearch(query[begin:])
-        longest = max(cp_list, key=len)
+        if len(cp_list):
+            longest = max(cp_list, key=len)
+        else:
+            longest = query[begin]
         result.append(longest)
         begin += len(longest)
 
@@ -31,14 +34,17 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dict', type=str, metavar='PATH', help='build double array')
-    # parser.add_argument('--cpq', type=str, help='query of commonPrefixSearch. Use commna (,) to specify multi queries.')
+    parser.add_argument('--q', type=str, help='Query for longest match search')
     args = parser.parse_args()
 
     da = DoubleArray()
     da.load(args.dict)
 
 
-    query = '行き当りばったりみごと素敵'
+    if args.q:
+        query = args.q
+    else:
+        query = '行き当りばったりにみじめでみごとに素敵な人ですね'
     longest_search(da, query)
 
     print('Process time: {:.1f}s'.format(time.time() - begin_time))
