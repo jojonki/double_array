@@ -26,6 +26,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--vocab', type=str, metavar='PATH', help='vocabulary file')
     parser.add_argument('--dict', type=str, metavar='PATH', help='build double array')
+    parser.add_argument('--cpq', type=str, help='query of commonPrefixSearch. Use commna (,) to specify multi queries.')
     args = parser.parse_args()
 
     da = DoubleArray()
@@ -38,7 +39,10 @@ def main():
         sys.exit('You need to specify --vocab or --dict')
 
 
-    query_list = ['東', '東京', '東京タワー', '東京都議会', '加藤清正']
+    if args.cpq:
+        query_list = args.cpq.split(',')
+    else:
+        query_list = ['東', '東京', '東京タワー', '東京都議会', '加藤清正']
     for q in query_list:
         print('=====Search {}======'.format(q))
         cp_list = da.commonPrefixSearch(q)
