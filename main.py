@@ -42,7 +42,7 @@ def main():
     if args.cpq:
         query_list = args.cpq.split(',')
     else:
-        query_list = ['東', '東京', '東京タワー', '東京都議会', '加藤清正']
+        query_list = ['東', '東京', '東京タワー', '東京都議会', '別個']
     for q in query_list:
         print('=====Search {}======'.format(q))
         cp_list = da.commonPrefixSearch(q)
