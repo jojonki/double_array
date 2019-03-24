@@ -142,7 +142,8 @@ class DoubleArray:
         else:
             # print(vocab.decode('utf-8'), 'NOT in the dic. Add', vocab.decode('utf-8'))
             self._registerVocab(s, c)
-            self._build(vocab) # TODO(jonki) recursive call should be handled safely
+            if c != 35: # 35 == '#'
+                self._build(vocab) # TODO(jonki) recursive call should be handled safely
 
     def build(self, vocab_list):
         """Build an double array from a vocabulary list.
