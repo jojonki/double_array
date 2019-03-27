@@ -91,10 +91,17 @@ class DoubleArray:
             else: # node conflicted
                 # Re-assign base and check nodes
                 # Gather all children nodes whose parent is the conflict node
-                child_node_list = [ch_i for ch_i, ch_v in enumerate(self.check) if ch_v == s]
+                # child_node_list = [ch_i for ch_i, ch_v in enumerate(self.check) if ch_v == s]
                 # Gather all children values whose parent is the conflict node
                 # The parent of the new adding node will be the conflict node
-                child_code_list = [ch_n - self.base[s] for ch_n in child_node_list] + [c]
+                # child_code_list = [ch_n - self.base[s] for ch_n in child_node_list] + [c]
+
+                child_node_list, child_code_list = [], []
+                for ch_i, ch_v in enumerate(self.check):
+                    if ch_v == s:
+                        child_node_list.append(ch_i)
+                        child_code_list.append(ch_i - self.base[s])
+                child_code_list += [c]
                 # child_code_list += [c] # also add the char of the new vocab
                 # max_ind = max(self.N + code_v + 1 for code_v in child_code_list)
                 # self._expand(max_ind - len(self._check)) # TODO maybe wrong
@@ -103,7 +110,8 @@ class DoubleArray:
                     found_empty_check = True
 
                     # Check available check for all the children
-                    max_ind = i + child_code_list[-1] + 1 # last child_code is the largest.
+                    # max_ind = i + child_code_list[-1] + 1 # last child_code is the largest.
+                    max_ind = i + c + 1 # last child_code is the largest. TODO really correct?
                     self._expand(max_ind - len(self._check)) # TODO maybe wrong
 
                     # All check must be 0
