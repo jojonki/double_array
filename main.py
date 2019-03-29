@@ -10,7 +10,7 @@ from double_array import DoubleArray
 def build(da, vocab_file):
     with open(vocab_file, 'r') as f:
         word_list = sorted([l.rstrip() for l in f.readlines()])
-    word_list = [w + '#' for w in word_list if not w.startswith('#')]
+    word_list = sorted([w + '#' for w in word_list if not w.startswith('#')])
     print('word_list', word_list[:10])
 
     print('Building vocabuary...')
