@@ -1,10 +1,15 @@
 import os
 import sys
 from tqdm import tqdm
+import cython
 
 T = '#'
 
-class DoubleArray:
+cdef class DoubleArray:
+    cdef public int _data_size
+    cdef public list _base
+    cdef public list _check
+    cdef public int _left
     def __init__(self, data_size=20):
         self._data_size = data_size
         self._base = []
@@ -13,7 +18,7 @@ class DoubleArray:
 
         self._left = 1
 
-    def _expand(self, diff):
+    cdef _expand(self, int diff):
         """Expand double array"""
         if diff > 0:
             self._base += [0] * diff
@@ -40,7 +45,7 @@ class DoubleArray:
             print('b: {}'.format(self._base[1:]))
             print('c: {}'.format(self._check[1:]))
 
-    def search(self, word, start_node=1):
+    cdef search(self, bytes word, int start_node=1):
         """Search a word in the double array
 
         Rerutns:
@@ -61,21 +66,30 @@ class DoubleArray:
 
         return True, crnt_node, crnt_char, c_ind
 
-    def _registerVocab(self, s, c):
+    # def refreshCheck(self, int N, int prev_dst_node, int new_dst_node):
+    cdef refreshCheck(self, int prev_dst_node, int new_dst_node):
+        for j in range(1, len(self._base)):
+            # for j in range(org_base, prev_dst_node):
+            if self._check[j] == prev_dst_node:
+                # print('org_base', org_base, 'prev_dst', prev_dst_node, 'i', i, 'N', len(self._base))
+                self._check[j] = new_dst_node
+
+    # @profile
+    cdef _registerVocab(self, int s, int c):
         """
         """
         if self._base[s] == 0: # Not used based node
             # Search an empty check node
             try:
-                dst_check_index = 1 + c + self._check[1+c:].index(0)
+                check_idx = 1 + c + self._check[1+c:].index(0)
             except ValueError as e: # No empty check nodes
                 # Expand check
                 self._expand(1)
-                dst_check_index = len(self._base) - 1
+                check_idx = len(self._base) - 1
 
-            self._base[s] = dst_check_index - c
-            self._check[dst_check_index] = s
-            s = dst_check_index # move to next node
+            self._base[s] = check_idx - c
+            self._check[check_idx] = s
+            s = check_idx # move to next node
         else: # Used base node
             # N = len(self._base)
             if (self._base[s] + c < len(self._base)) and self._check[self._base[s] + c] == 0: # if check is correct
@@ -86,12 +100,15 @@ class DoubleArray:
                 # Gather all children nodes whose parent is the conflict node
                 # Gather all children values whose parent is the conflict node
                 # The parent of the new adding node will be the conflict node
-                child_node_list, child_code_list = [], []
-                for ch_i, ch_v in enumerate(self._check):
-                    if ch_v == s:
-                        child_node_list.append(ch_i)
-                        child_code_list.append(ch_i - self._base[s])
-                child_code_list += [c]
+                # child_node_list, child_code_list = [], []
+                # for ch_i, ch_v in enumerate(self._check):
+                #     if ch_v == s:
+                #         child_node_list.append(ch_i)
+                #         child_code_list.append(ch_i - self._base[s])
+                offset = self._base[s]
+                child_node_list = [ch_i for ch_i, ch_v in enumerate(self._check) if ch_v == s]
+                child_code_list = [ch_i - offset for ch_i in child_node_list] + [c]
+                # child_code_list += [c]
                 for i in range(self._left, len(self._base)):
                     # Search new empty check for the children
                     found_empty_check = True
@@ -127,9 +144,13 @@ class DoubleArray:
                         self._check[new_dst_node] = s
 
                         # Update children whose parent is the updated node, i.e., the grand parent is the conflict node
-                        for j in range(1, len(self._base)):
-                            if self._check[j] == prev_dst_node:
-                                self._check[j] = new_dst_node
+                        # TODO サイズが大きくなるほどここは遅い
+                        self.refreshCheck(prev_dst_node, new_dst_node)
+                        # for j in range(1, len(self._base)):
+                        #     # for j in range(org_base, prev_dst_node):
+                        #     if self._check[j] == prev_dst_node:
+                        #         # print('org_base', org_base, 'prev_dst', prev_dst_node, 'i', i, 'N', len(self._base))
+                        #         self._check[j] = new_dst_node
 
                         # Clear old information of the child
                         self._base[prev_dst_node] = 0
@@ -146,18 +167,17 @@ class DoubleArray:
 
         return s
 
-    def _build(self, vocab):
-        if type(vocab) == str:
-            vocab = vocab.encode('utf-8')
+    cdef _build(self, bytes vocab):
         ret, s, char, char_ind = self.search(vocab) # bool, final_node, final_char
         if ret:
-            print(vocab.decode('utf-8'), 'in the dic')
+            pass
+            # print(vocab.decode('utf-8'), 'in the dic')
         else:
             # print(vocab.decode('utf-8'), 'NOT in the dic. Add', vocab.decode('utf-8'))
             for i in vocab[char_ind:]:
                 s = self._registerVocab(s, i)
 
-    def build(self, vocab_list):
+    cpdef build(self, list vocab_list):
         """Build an double array from a vocabulary list.
 
         Args:
@@ -167,10 +187,10 @@ class DoubleArray:
             A boolean indicating if it succeed to build the dictioanry or not.
         """
         for vocab in tqdm(vocab_list):
-            print('Build vocab:', vocab)
+            # print('Build vocab:', vocab)
             if not vocab.endswith(T):
                 vocab += T
-            self._build(vocab)
+            self._build(vocab.encode('utf-8'))
         self.report()
 
     def commonPrefixSearch(self, input_str):
