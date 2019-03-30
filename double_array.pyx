@@ -66,18 +66,13 @@ cdef class DoubleArray:
 
         return True, crnt_node, crnt_char, c_ind
 
-    # def refreshCheck(self, int N, int prev_dst_node, int new_dst_node):
     cdef refreshCheck(self, int prev_dst_node, int new_dst_node):
         for j in range(1, len(self._base)):
-            # for j in range(org_base, prev_dst_node):
             if self._check[j] == prev_dst_node:
-                # print('org_base', org_base, 'prev_dst', prev_dst_node, 'i', i, 'N', len(self._base))
                 self._check[j] = new_dst_node
 
     # @profile
     cdef _registerVocab(self, int s, int c):
-        """
-        """
         if self._base[s] == 0: # Not used based node
             # Search an empty check node
             try:
@@ -168,12 +163,13 @@ cdef class DoubleArray:
         return s
 
     cdef _build(self, bytes vocab):
-        ret, s, char, char_ind = self.search(vocab) # bool, final_node, final_char
+        ret, s, c, char_ind = self.search(vocab) # bool, final_node, final_char
         if ret:
             pass
             # print(vocab.decode('utf-8'), 'in the dic')
         else:
             # print(vocab.decode('utf-8'), 'NOT in the dic. Add', vocab.decode('utf-8'))
+            # self._registerVocab(vocab[char_ind:], s)
             for i in vocab[char_ind:]:
                 s = self._registerVocab(s, i)
 

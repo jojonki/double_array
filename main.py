@@ -52,4 +52,6 @@ def main():
 
 
 if __name__ == '__main__':
+    # import cProfile
     main()
+    # cProfile.run('main()', sort='time')
