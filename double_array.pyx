@@ -1,3 +1,5 @@
+# cython: profile=True
+# cython: linetrace=True
 import os
 import sys
 from tqdm import tqdm
@@ -67,14 +69,13 @@ cdef class DoubleArray:
         return True, crnt_node, crnt_char, c_ind
 
     cdef refreshCheck(self, int prev_dst_node, int new_dst_node):
-        res = []
-        for j in range(1, len(self._base)):
-            if self._check[j] == prev_dst_node:
-                self._check[j] = new_dst_node
-                res.append(j)
-        print('########')
-        print(res)
-        print(prev_dst_node, new_dst_node)
+        try:
+            min_j = self._check.index(prev_dst_node)
+            for j in range(min_j, min(len(self._base), min_j+255)):
+                if self._check[j] == prev_dst_node:
+                    self._check[j] = new_dst_node
+        except ValueError as e:
+            pass
 
     cdef _registerVocab(self, bytes vocab, int s):
         for c in vocab:
@@ -100,29 +101,19 @@ cdef class DoubleArray:
                     # Gather all children nodes whose parent is the conflict node
                     # Gather all children values whose parent is the conflict node
                     # The parent of the new adding node will be the conflict node
-                    # child_node_list, child_code_list = [], []
-                    # for ch_i, ch_v in enumerate(self._check):
-                    #     if ch_v == s:
-                    #         child_node_list.append(ch_i)
-                    #         child_code_list.append(ch_i - self._base[s])
                     offset = self._base[s]
                     # child_node_list = [ch_i for ch_i, ch_v in enumerate(self._check) if ch_v == s]
                     # child_code_list = [ch_i - offset for ch_i in child_node_list] + [c]
 
-                    # beg = s + offset
-                    # end = beg + 255
                     beg = max(0, min(s, offset) - 255)
                     end = min(len(self._base), max(s, offset) + 255)
                     child_node_list2 = [ch_i + beg for ch_i, ch_v in enumerate(self._check[beg:end]) if ch_v == s]
                     child_code_list2 = [ch_i - offset for ch_i in child_node_list2] + [c]
-                    # print('----------------')
                     # print(child_node_list)
                     # print(child_node_list2)
                     # assert len(child_node_list) == len(child_node_list2)
                     # for a1, a2 in zip(child_node_list, child_node_list2):
                     #     assert a1 == a2
-
-
 
                     for i in range(self._left, len(self._base)):
                         # Search new empty check for the children
@@ -159,20 +150,7 @@ cdef class DoubleArray:
 
                             # Update children whose parent is the updated node, i.e., the grand parent is the conflict node
                             # TODO サイズが大きくなるほどここは遅い
-                            # self.refreshCheck(prev_dst_node, new_dst_node)
-                            res = []
-                            try:
-                                min_j = self._check.index(prev_dst_node)
-                                # for j in range(1, len(self._base)): hoge
-                                for j in range(min_j, min(len(self._base), min_j+255)):
-                                    # for j in range(org_base, prev_dst_node):
-                                    if self._check[j] == prev_dst_node:
-                                        self._check[j] = new_dst_node
-                                        res.append(j)
-                                # if res:
-                                #     print(res, max(res) - min(res) < 255)
-                            except ValueError as e: # No empty check nodes
-                                pass
+                            self.refreshCheck(prev_dst_node, new_dst_node)
 
                             # Clear old information of the child
                             self._base[prev_dst_node] = 0
@@ -180,7 +158,6 @@ cdef class DoubleArray:
 
                         # Set check for the new character
                         self._check[offset + c] = s
-                        # self.report()
                         s = offset + c # move to next node
                         break
                     # TODO handle if there are no empty check
