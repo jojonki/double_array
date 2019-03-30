@@ -68,101 +68,109 @@ cdef class DoubleArray:
 
         return True, crnt_node, crnt_char, c_ind
 
-    cdef refreshCheck(self, int prev_dst_node, int new_dst_node):
+    cdef refreshCheck(self, int prev_dst_node, int new_dst_node, int s):
         try:
-            min_j = self._check.index(prev_dst_node)
+            offset = max(0, min(self._left, s) - 255)
+            min_j = offset + self._check[offset:].index(prev_dst_node)
             for j in range(min_j, min(len(self._base), min_j+255)):
                 if self._check[j] == prev_dst_node:
                     self._check[j] = new_dst_node
         except ValueError as e:
             pass
 
+    cdef int _reAssign(self, int offset, int s, int c, list child_node_list):
+        # offset = i
+        org_base = self._base[s] # save the old offset
+        self._base[s] = offset
+        # Update the node and check of the all children with the new offset
+        for node in child_node_list:
+            code_v = node - org_base
+            prev_dst_node = org_base + code_v
+            new_dst_node = offset + code_v
+            self._base[new_dst_node] = self._base[prev_dst_node]
+            self._check[new_dst_node] = s
+
+            # Update children whose parent is the updated node, i.e., the grand parent is the conflict node
+            # TODO サイズが大きくなるほどここは遅い
+            self.refreshCheck(prev_dst_node, new_dst_node, s)
+
+            # Clear old information of the child
+            self._base[prev_dst_node] = 0
+            self._check[prev_dst_node] = 0
+
+        # Set check for the new character
+        self._check[offset + c] = s
+        s = offset + c # move to next node
+        return s
+
+    cdef int reAssign(self, int s, int c, list child_node_list, list child_code_list):
+        for i in range(self._left, len(self._base)):
+            # Search new empty check for the children
+            found_empty_check = True
+
+            # Check available check for all the children
+            # max_ind = i + child_code_list[-1] + 1 # last child_code is the largest.
+            max_ind = i + c + 1 # last child_code is the largest. TODO really correct?
+            self._expand(max_ind - len(self._check)) # TODO maybe wrong
+
+            # All check must be 0
+            for code_v in child_code_list:
+                if self._check[i + code_v] != 0:
+                    found_empty_check = False
+                    break
+
+            if not found_empty_check: # Found available check
+                continue
+
+            # FOUND an empty node
+            if self._check[self._left:i].count(0) < (i - self._left + 1) * 0.05:
+                self._left = i
+
+
+            s = self._reAssign(i, s, c, child_node_list)
+            break
+        # TODO handle if there are no empty check
+        if not found_empty_check:
+            sys.exit('Could not find empty check when it conflicts')
+        return s
+
+    cdef getChildren(self, int s, int c):
+        offset = self._base[s]
+        # child_node_list = [ch_i for ch_i, ch_v in enumerate(self._check) if ch_v == s]
+        # child_code_list = [ch_i - offset for ch_i in child_node_list] + [c]
+
+        beg = max(0, min(s, offset) - 255)
+        end = min(len(self._base), max(s, offset) + 255)
+        child_node_list2 = [ch_i + beg for ch_i, ch_v in enumerate(self._check[beg:end]) if ch_v == s]
+        child_code_list2 = [ch_i - offset for ch_i in child_node_list2] + [c]
+        return child_node_list2, child_code_list2
+
+    cdef int assign(self, int s, int c):
+        self._expand(1)
+        check_idx = len(self._base) - 1
+
+        self._base[s] = check_idx - c
+        self._check[check_idx] = s
+        return check_idx # move to next node
+
+    cdef int refresh(self, int s, int c):
+        if (self._base[s] + c < len(self._base)) and self._check[self._base[s] + c] == 0: # if check is correct
+            self._check[self._base[s] + c] = s
+            s = self._base[s] + c # move to next node
+        else: # node conflicted
+            child_node_list2, child_code_list2 = self.getChildren(s, c)
+
+            s = self.reAssign(s, c, child_node_list2, child_code_list2)
+        return s
+
     cdef _registerVocab(self, bytes vocab, int s):
         for c in vocab:
             if self._base[s] == 0: # Not used based node
                 # Search an empty check node
-                try:
-                    check_idx = 1 + c + self._check[1+c:].index(0)
-                except ValueError as e: # No empty check nodes
-                    # Expand check
-                    self._expand(1)
-                    check_idx = len(self._base) - 1
-
-                self._base[s] = check_idx - c
-                self._check[check_idx] = s
-                s = check_idx # move to next node
+                s = self.assign(s, c)
             else: # Used base node
                 # N = len(self._base)
-                if (self._base[s] + c < len(self._base)) and self._check[self._base[s] + c] == 0: # if check is correct
-                    self._check[self._base[s] + c] = s
-                    s = self._base[s] + c # move to next node
-                else: # node conflicted
-                    # Re-assign base and check nodes
-                    # Gather all children nodes whose parent is the conflict node
-                    # Gather all children values whose parent is the conflict node
-                    # The parent of the new adding node will be the conflict node
-                    offset = self._base[s]
-                    # child_node_list = [ch_i for ch_i, ch_v in enumerate(self._check) if ch_v == s]
-                    # child_code_list = [ch_i - offset for ch_i in child_node_list] + [c]
-
-                    beg = max(0, min(s, offset) - 255)
-                    end = min(len(self._base), max(s, offset) + 255)
-                    child_node_list2 = [ch_i + beg for ch_i, ch_v in enumerate(self._check[beg:end]) if ch_v == s]
-                    child_code_list2 = [ch_i - offset for ch_i in child_node_list2] + [c]
-                    # print(child_node_list)
-                    # print(child_node_list2)
-                    # assert len(child_node_list) == len(child_node_list2)
-                    # for a1, a2 in zip(child_node_list, child_node_list2):
-                    #     assert a1 == a2
-
-                    for i in range(self._left, len(self._base)):
-                        # Search new empty check for the children
-                        found_empty_check = True
-
-                        # Check available check for all the children
-                        # max_ind = i + child_code_list[-1] + 1 # last child_code is the largest.
-                        max_ind = i + c + 1 # last child_code is the largest. TODO really correct?
-                        self._expand(max_ind - len(self._check)) # TODO maybe wrong
-
-                        # All check must be 0
-                        for code_v in child_code_list2:
-                            if self._check[i + code_v] != 0:
-                                found_empty_check = False
-                                break
-
-                        if not found_empty_check: # Found available check
-                            continue
-
-                        # FOUND an empty node
-                        if self._check[self._left:i].count(0) < (i - self._left + 1) * 0.05:
-                            self._left = i
-
-                        offset = i
-                        org_base = self._base[s] # save the old offset
-                        self._base[s] = offset
-                        # Update the node and check of the all children with the new offset
-                        for node in child_node_list2:
-                            code_v = node - org_base
-                            prev_dst_node = org_base + code_v
-                            new_dst_node = offset + code_v
-                            self._base[new_dst_node] = self._base[prev_dst_node]
-                            self._check[new_dst_node] = s
-
-                            # Update children whose parent is the updated node, i.e., the grand parent is the conflict node
-                            # TODO サイズが大きくなるほどここは遅い
-                            self.refreshCheck(prev_dst_node, new_dst_node)
-
-                            # Clear old information of the child
-                            self._base[prev_dst_node] = 0
-                            self._check[prev_dst_node] = 0
-
-                        # Set check for the new character
-                        self._check[offset + c] = s
-                        s = offset + c # move to next node
-                        break
-                    # TODO handle if there are no empty check
-                    if not found_empty_check:
-                        sys.exit('Could not find empty check when it conflicts')
+                s = self.refresh(s, c)
 
     cdef _build(self, bytes vocab):
         ret, s, c, char_ind = self.search(vocab) # bool, final_node, final_char
