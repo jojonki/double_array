@@ -20,7 +20,9 @@ def main():
     args = parser.parse_args()
 
     da = DoubleArray()
+    print('Loading dic...')
     da.load(args.dict)
+    print('Loaded!')
 
     query_list = args.q.split(',')
     for q in query_list:
