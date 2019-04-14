@@ -1,4 +1,4 @@
-# double_array
+# Double Array in python
 
 ## My environment
 - python 3.6.1
