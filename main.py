@@ -34,8 +34,6 @@ def main():
 
     da = DoubleArray()
     build(da, args.vocab)
-    else:
-        sys.exit('You need to specify --vocab or --dict')
 
     sample_query_list = ['東', '東京', '東京タワー', '東京都議会', '別個']
     for q in sample_query_list:
