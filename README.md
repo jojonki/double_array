@@ -1,7 +1,8 @@
 # double_array
 
-## Requirements
-- cython
+## My environment
+- python 3.6.1
+- cython 0.25.2
 - tqdm
 
 
@@ -22,21 +23,19 @@ $ ./build_and_run.sh
 ```
 
 3. Run common prefix search with the double-array.
-
-```
-$ python main.py --dict models/ipadic-vocab.txt.dict --cpq すもも,東京
-=====Search すもも======
-"す" found in the dictionary
-"すも" found in the dictionary
-"すもも" found in the dictionary
-commonPrefixSearch("すもも"): ['す', 'すも', 'すもも']
-=====Search 東京======
-"東" found in the dictionary
-"東京" found in the dictionary
-commonPrefixSearch("東京"): ['東', '東京']
-Process time: 0.5s
-```
-
+    ```
+    $ python main.py --dict models/ipadic-vocab.txt.dict --cpq すもも,東京
+    =====Search すもも======
+    "す" found in the dictionary
+    "すも" found in the dictionary
+    "すもも" found in the dictionary
+    commonPrefixSearch("すもも"): ['す', 'すも', 'すもも']
+    =====Search 東京======
+    "東" found in the dictionary
+    "東京" found in the dictionary
+    commonPrefixSearch("東京"): ['東', '東京']
+    Process time: 0.5s
+    ```
 
 ## TODOs
 - [ ] add tests
