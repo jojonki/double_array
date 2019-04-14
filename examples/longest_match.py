@@ -1,14 +1,12 @@
 """Longest match search sample"""
 
 import argparse
-import codecs
-import glob
-import gzip
 import os
 import sys
 import time
-from tqdm import tqdm
 
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
 from double_array import DoubleArray
 
 
@@ -33,8 +31,8 @@ def main():
     begin_time = time.time()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dict', type=str, metavar='PATH', help='build double array')
-    parser.add_argument('--q', type=str, help='Query for longest match search')
+    parser.add_argument('--dict', required=True, type=str, metavar='PATH', help='double-array dictionary')
+    parser.add_argument('--q', required=True, type=str, help='Query for longest match search')
     args = parser.parse_args()
 
     da = DoubleArray()
