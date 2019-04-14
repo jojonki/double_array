@@ -152,9 +152,11 @@ cdef class DoubleArray:
 
             s = self._reAssign(i, s, c, child_node_list)
             break
-        # TODO handle if there are no empty check
+
+        # Expand the array for the nodes
         if not found_empty_check:
-            sys.exit('Could not find empty check when it conflicts')
+            s = self.assign(s, c)
+
         return s
 
     cdef int update(self, int s, int c):
