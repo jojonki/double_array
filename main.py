@@ -1,3 +1,6 @@
+"""Main program to build or use your double-array
+"""
+
 import argparse
 import gzip
 import os
@@ -7,16 +10,18 @@ from tqdm import tqdm
 
 from double_array import DoubleArray
 
+
 def build(da, vocab_file):
     with open(vocab_file, 'r') as f:
         word_list = sorted([l.rstrip() for l in f.readlines()])
     word_list = sorted([w + '#' for w in word_list if not w.startswith('#')])
-    print('word_list', word_list[:10])
+    print('Sample words', word_list[:10])
 
     print('Building vocabuary...')
     da.build(word_list)
-    print('Built!')
-    da.save('./models/{}.dict'.format(vocab_file.split('/')[-1]))
+    dic_file = './models/{}.dict'.format(vocab_file.split('/')[-1])
+    print('You have built the double-array dictionary!: {}'.format(dic_file))
+    da.save(dic_file)
     da.report()
 
 
@@ -34,10 +39,8 @@ def main():
         da.load(args.dict)
     elif args.vocab:
         build(da, args.vocab)
-        # da.report(verbose=True)
     else:
         sys.exit('You need to specify --vocab or --dict')
-
 
     if args.cpq:
         query_list = args.cpq.split(',')

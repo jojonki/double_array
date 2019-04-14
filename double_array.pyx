@@ -1,3 +1,5 @@
+"""Cython powered DoubleArray class.
+"""
 # cython: profile=True
 # cython: linetrace=True
 import os
@@ -5,7 +7,8 @@ import sys
 from tqdm import tqdm
 import cython
 
-T = '#'
+T = '#' # termination character
+
 
 cdef class DoubleArray:
     cdef public int _data_size
@@ -21,7 +24,7 @@ cdef class DoubleArray:
         self._left = 1
 
     cdef _expand(self, int diff):
-        """Expand double array"""
+        """Expands double array"""
         if diff > 0:
             self._base += [0] * diff
             self._check += [0] * diff
@@ -31,6 +34,7 @@ cdef class DoubleArray:
         self._check = [0] * self._data_size
 
     def report(self, verbose=False):
+        """Reports the current double-array size"""
         N = len(self._base)
         print('Array length: {}'.format(N))
         d_size = (sys.getsizeof(self._base) + sys.getsizeof(self._check))
@@ -48,7 +52,7 @@ cdef class DoubleArray:
             print('c: {}'.format(self._check[1:]))
 
     cdef search(self, bytes word, int start_node=1):
-        """Search a word in the double array
+        """Searches a word in the double array
 
         Rerutns:
             Return the search result with information
@@ -153,7 +157,7 @@ cdef class DoubleArray:
         self._check[check_idx] = s
         return check_idx # move to next node
 
-    cdef int refresh(self, int s, int c):
+    cdef int update(self, int s, int c):
         if (self._base[s] + c < len(self._base)) and self._check[self._base[s] + c] == 0: # if check is correct
             self._check[self._base[s] + c] = s
             s = self._base[s] + c # move to next node
@@ -164,24 +168,30 @@ cdef class DoubleArray:
         return s
 
     cdef _registerVocab(self, bytes vocab, int s):
+        """Regiters the vocab in byte unit.
+        """
         for c in vocab:
             if self._base[s] == 0: # Not used based node
                 # Search an empty check node
                 s = self.assign(s, c)
             else: # Used base node
-                # N = len(self._base)
-                s = self.refresh(s, c)
+                s = self.update(s, c)
 
     cdef _build(self, bytes vocab):
+        """Registes a vocab to the double-array.
+        """
+        # Firstly, searching the vocab from the current double-array.
+        # Skip the registration if the vocab has been already registered.
         ret, s, c, char_ind = self.search(vocab) # bool, final_node, final_char
         if ret:
+            # Already registered.
             pass
-            # print(vocab.decode('utf-8'), 'in the dic')
         else:
+            # Registeres the new vocab from the checkpoint because the vocab may be partially registered.
             self._registerVocab(vocab[char_ind:], s)
 
     cpdef build(self, list vocab_list):
-        """Build an double array from a vocabulary list.
+        """Builds an double array from a vocabulary list.
 
         Args:
             vocab_list: An array of vocabuary(str)
@@ -197,13 +207,13 @@ cdef class DoubleArray:
         self.report()
 
     def commonPrefixSearch(self, input_str):
-        """Search all common prefix of input string from the dictionary.
+        """Searches all common prefix of input string from the dictionary.
 
-        Args:
-            input_str: A sentence of the query.
+            Args:
+                input_str: A sentence of the query.
 
-        Return:
-            prefix_list: A list of words contains input_str as prefix
+            Return:
+                prefix_list: A list of words contains input_str as prefix
         """
         cp_list = []
         final_node = 1
@@ -221,13 +231,17 @@ cdef class DoubleArray:
 
 
     def save(self, fpath):
-        """Save a double array to a file"""
+        """Saves a double array to a file"""
         with open(fpath, 'w') as fout:
             fout.write('{}\n'.format(','.join([str(ind) for ind in self._base])))
             fout.write('{}\n'.format(','.join([str(ind) for ind in self._check])))
 
     def load(self, fpath):
-        """Load a file of a double array"""
+        """Loads a double-array file
+
+            The dobule-array file should be a two lines file.
+            The each line consists of integers with comma separated manner.
+        """
         ret = False
         if os.path.exists(fpath):
             with open(fpath, 'r') as fin:
