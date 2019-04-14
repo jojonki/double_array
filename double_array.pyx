@@ -11,10 +11,11 @@ T = '#' # termination character
 
 
 cdef class DoubleArray:
-    cdef public int _data_size
+    cdef public int _data_size # # Length of a double-array
     cdef public list _base
     cdef public list _check
-    cdef public int _left
+    cdef public int _left # Left edge index for index search
+
     def __init__(self, data_size=20):
         self._data_size = data_size
         self._base = []
@@ -24,7 +25,8 @@ cdef class DoubleArray:
         self._left = 1
 
     cdef _expand(self, int diff):
-        """Expands double array"""
+        """Expands double array with diff (positive int)
+        """
         if diff > 0:
             self._base += [0] * diff
             self._check += [0] * diff
@@ -34,7 +36,8 @@ cdef class DoubleArray:
         self._check = [0] * self._data_size
 
     def report(self, verbose=False):
-        """Reports the current double-array size"""
+        """Reports the current double-array size
+        """
         N = len(self._base)
         print('Array length: {}'.format(N))
         d_size = (sys.getsizeof(self._base) + sys.getsizeof(self._check))
@@ -107,13 +110,30 @@ cdef class DoubleArray:
         s = offset + c # move to next node
         return s
 
-    cdef int reAssign(self, int s, int c, list child_node_list, list child_code_list):
+    cdef getChildren(self, int s, int c):
+        offset = self._base[s]
+        # child_node_list = [ch_i for ch_i, ch_v in enumerate(self._check) if ch_v == s]
+        # child_code_list = [ch_i - offset for ch_i in child_node_list] + [c]
+
+        beg = max(0, min(s, offset) - 255)
+        end = min(len(self._base), max(s, offset) + 255)
+        child_node_list2 = [ch_i + beg for ch_i, ch_v in enumerate(self._check[beg:end]) if ch_v == s]
+        child_code_list2 = [ch_i - offset for ch_i in child_node_list2] + [c]
+        return child_node_list2, child_code_list2
+
+    cdef int resolveConflicts(self, int s, int c):
+        """Resolves the conflict to add new code point.
+        """
+        # Firstly, gather children whose parent is node s.
+        child_node_list, child_code_list = self.getChildren(s, c)
+
+        # Then, search an empty nodes for the children.
         for i in range(self._left, len(self._base)):
             # Search new empty check for the children
             found_empty_check = True
 
             # Check available check for all the children
-            # max_ind = i + child_code_list[-1] + 1 # last child_code is the largest.
+            # assert max(child_code_list) == c # Always True
             max_ind = i + c + 1 # last child_code is the largest. TODO really correct?
             self._expand(max_ind - len(self._check)) # TODO maybe wrong
 
@@ -127,9 +147,8 @@ cdef class DoubleArray:
                 continue
 
             # FOUND an empty node
-            if self._check[self._left:i].count(0) < (i - self._left + 1) * 0.05:
+            if self._check[self._left:i].count(0) < (i - self._left + 1) * 0.1:
                 self._left = i
-
 
             s = self._reAssign(i, s, c, child_node_list)
             break
@@ -138,34 +157,25 @@ cdef class DoubleArray:
             sys.exit('Could not find empty check when it conflicts')
         return s
 
-    cdef getChildren(self, int s, int c):
-        offset = self._base[s]
-        # child_node_list = [ch_i for ch_i, ch_v in enumerate(self._check) if ch_v == s]
-        # child_code_list = [ch_i - offset for ch_i in child_node_list] + [c]
-
-        beg = max(0, min(s, offset) - 255)
-        end = min(len(self._base), max(s, offset) + 255)
-        child_node_list2 = [ch_i + beg for ch_i, ch_v in enumerate(self._check[beg:end]) if ch_v == s]
-        child_code_list2 = [ch_i - offset for ch_i in child_node_list2] + [c]
-        return child_node_list2, child_code_list2
+    cdef int update(self, int s, int c):
+        if (self._base[s] + c < len(self._base)) and self._check[self._base[s] + c] == 0: # if check is correct
+            self._check[self._base[s] + c] = s
+            s = self._base[s] + c # move to next node
+        else: # node conflicted or need to expand the array
+            s = self.resolveConflicts(s, c)
+        return s
 
     cdef int assign(self, int s, int c):
+        """Assigns a new node
+        """
+
+        # TODO I expand the array to avoid searching an empty check node.
         self._expand(1)
         check_idx = len(self._base) - 1
 
         self._base[s] = check_idx - c
         self._check[check_idx] = s
         return check_idx # move to next node
-
-    cdef int update(self, int s, int c):
-        if (self._base[s] + c < len(self._base)) and self._check[self._base[s] + c] == 0: # if check is correct
-            self._check[self._base[s] + c] = s
-            s = self._base[s] + c # move to next node
-        else: # node conflicted
-            child_node_list2, child_code_list2 = self.getChildren(s, c)
-
-            s = self.reAssign(s, c, child_node_list2, child_code_list2)
-        return s
 
     cdef _registerVocab(self, bytes vocab, int s):
         """Regiters the vocab in byte unit.
@@ -206,6 +216,9 @@ cdef class DoubleArray:
             self._build(vocab.encode('utf-8'))
         self.report()
 
+    ###########################################################################
+    # Utility methods
+    ###########################################################################
     def commonPrefixSearch(self, input_str):
         """Searches all common prefix of input string from the dictionary.
 
@@ -231,7 +244,8 @@ cdef class DoubleArray:
 
 
     def save(self, fpath):
-        """Saves a double array to a file"""
+        """Saves a double array to a filter
+        """
         with open(fpath, 'w') as fout:
             fout.write('{}\n'.format(','.join([str(ind) for ind in self._base])))
             fout.write('{}\n'.format(','.join([str(ind) for ind in self._check])))
